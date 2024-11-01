@@ -4,7 +4,7 @@ import json
 import glob
 
 # Connexion à la base de données SQLite (ou création)
-conn = sqlite3.connect('abilities.db')
+conn = sqlite3.connect('./BDD/abilities.db')
 cursor = conn.cursor()
 
 # Création de la table pour les talents

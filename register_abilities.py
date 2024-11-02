@@ -56,7 +56,7 @@ def get_ability_infos(dbSymbol):
     ability_fr_name = ''
     ability_fr_desc = ''
     ability_en_desc = ''
-    ability_desc_row = ''
+    ability_desc_row = 0
     ability_name_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100004.csv'
     ability_desc_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100005.csv'
     

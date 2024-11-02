@@ -23,6 +23,8 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS moves (
                     id INTEGER PRIMARY KEY,
                     en_name TEXT,
                     fr_name TEXT,
+                    en_desc TEXT,
+                    fr_desc TEXT,
                     type TEXT,
                     power INTEGER,
                     accuracy INTEGER,
@@ -69,8 +71,10 @@ print('La BDD "moves.db" à été vidé.')
 def insert_move(file_path):
     with open(file_path, 'r') as file:
         move_data = json.load(file)
+
         # Récupération des nom en et fr de l'attaque
-        move_en_name, move_fr_name = get_move_name(move_data['dbSymbol'])
+        move_en_name, move_fr_name, move_en_desc, move_fr_desc = get_move_infos(move_data['dbSymbol'])
+
         # Vérification que battleStageMod & moveStatus ne sont pas vide
         battleStageMod = ''
         if move_data['battleStageMod']: battleStageMod = move_data['battleStageMod']
@@ -78,12 +82,12 @@ def insert_move(file_path):
         moveStatus = ''
         if move_data['moveStatus']: moveStatus = move_data['moveStatus']
         else: moveStatus = '/'
+
         print(f'Enregistrement "ID : EN : FR" -> {move_data["id"]} : {move_en_name} : {move_fr_name}')
-        
         # Insérer les données dans la table "moves"
         cursor.execute('''
             INSERT INTO moves (
-                id, en_name, fr_name, type, power, accuracy, PP, category,
+                id, en_name, fr_name, en_desc, fr_desc, type, power, accuracy, PP, category,
                 movecriticalRate, priority, isAuthentic, isBallistics,
                 isBite, isBlocable, isCharge, isDance, isDirect,
                 isDistance, isEffectChance, isGravity, isHeal,
@@ -92,11 +96,13 @@ def insert_move(file_path):
                 isPunch, isRecharge, isSnatchable, isSoundAttack,
                 isUnfreeze, battleEngineAimedTarget, battleStageMod,
                 moveStatus, effectChance, isSlicingAttack, isWind
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             move_data['id'],
             move_en_name,
             move_fr_name,
+            move_en_desc,
+            move_fr_desc,
             move_data['type'],
             move_data['power'],
             move_data['accuracy'],
@@ -144,17 +150,19 @@ def format_move_name(move_name):
     return move_name
 
 # Fonction pour récupérer les noms FR et EN d'une attaque à partir du dbSymbol
-def get_move_name(dbSymbol):
-    # print('Récupération des noms FR et EN de l'attaque : ' + dbSymbol)
-    move_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100006.csv'
-    
+def get_move_infos(dbSymbol):
     # Initialisation des variables pour les noms
     move_en_name = format_move_name(dbSymbol)
     move_fr_name = ''
+    move_en_desc = ''
+    move_fr_desc = ''
+    move_desc_row = 0
+    move_name_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100006.csv'
+    move_desc_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100007.csv'
     
     # Lecture du fichier CSV qui contient les noms d'attaque en EN et FR
     try:
-        with open(move_text_file, mode='r', encoding='utf-8') as file:
+        with open(move_name_text_file, mode='r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
             headers = next(csv_reader)  # Première ligne pour les en-têtes
             
@@ -164,9 +172,12 @@ def get_move_name(dbSymbol):
             # Il y a d'autre langues d'enregistré pour PSDK, mais ce programme les ignorera
             
             # Parcourir les lignes pour trouver la correspondance du nom anglais
+            rowNumber = 1
             for row in csv_reader:
+                rowNumber = rowNumber + 1
                 if format_move_name(row[en_index]) == move_en_name:
                     move_fr_name = row[fr_index]
+                    move_desc_row = rowNumber
                     break  # Sortie de la boucle dès (que le nom est trouvé
                 
     except FileNotFoundError:
@@ -174,7 +185,30 @@ def get_move_name(dbSymbol):
     except Exception as e:
         print(f'Erreur lors de la lecture du fichier : {e}')
 
-    return move_en_name, move_fr_name
+    # On passe à la récupération des descriptions
+    try:
+        with open(move_desc_text_file, mode='r', encoding='utf-8') as file:
+            csv_reader = csv.reader(file)
+            headers = next(csv_reader)  # Première ligne pour les en-têtes
+            
+            # Trouver les index pour 'en' et 'fr' dans les en-têtes, normalement 0 pour EN et 1 pour FR
+            en_index = headers.index('en')
+            fr_index = headers.index('fr')
+
+            rowNumber = 1
+            for row in csv_reader:
+                rowNumber = rowNumber + 1
+                if rowNumber == move_desc_row:
+                    move_en_desc = row[en_index]
+                    move_fr_desc = row[fr_index]
+                    break  # Sortie de la boucle dès que le nom est trouvé
+                
+    except FileNotFoundError:
+        print("Le fichier de dialogue n'a pas été trouvé.")
+    except Exception as e:
+        print(f'Erreur lors de la lecture du fichier : {e}')
+
+    return move_en_name, move_fr_name, move_en_desc, move_fr_desc
 
 # Utiliser glob pour lire tous les fichiers jSON
 abilities_file_path = config['psdk_game_folder'] + '/Data/Studio/moves/*.json'

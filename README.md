@@ -42,6 +42,7 @@ Les scripts sont écrits en Python et utilisent les modules suivants :
 - SQLite 3 : Pour créer et insérer les données dans un fichier .db
 - JSON : Pour lire les fichiers JSON
 - Glob : Pour traiter plusieurs fichier d'un dossier
+- Re : Pour facilement formatter les charactère spéciaux
 
 ## Contributions
 

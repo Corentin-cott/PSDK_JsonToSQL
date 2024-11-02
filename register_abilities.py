@@ -36,7 +36,7 @@ def format_ability_name(dbSymbol):
 # Fonction pour récupérer les noms FR et EN d'un talent à partir du dbSymbol
 def get_ability_name(dbSymbol):
     # print('Récupération des noms FR et EN du talent : ' + dbSymbol)
-    ability_text_file = '../Data/Text/Dialogs/100004.csv'
+    ability_text_file = '../pokemon-rlm/Data/Text/Dialogs/100004.csv'
     
     # Initialisation des variables pour les noms
     ability_en_name = format_ability_name(dbSymbol)

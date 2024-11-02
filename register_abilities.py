@@ -1,10 +1,21 @@
 import csv
+import re
 import sqlite3
 import json
 import glob
 
+# Lecture du json de config
+def load_config(config_file):
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    return config
+
+config = load_config('./config.json')
+print(f'Dossier du projet PSDK : {config['psdk_game_folder']}')
+print(f'Dossier du projet PSDK : {config['bdd_folder']}')
+
 # Connexion à la base de données SQLite (ou création)
-conn = sqlite3.connect('./BDD/abilities.db')
+conn = sqlite3.connect(config['bdd_folder'] + '/abilities.db')
 cursor = conn.cursor()
 
 # Création de la table pour les talents
@@ -27,16 +38,18 @@ def insert_ability(file_path):
         cursor.execute('INSERT INTO abilities (id, nameEN, nameFR) VALUES (?, ?, ?)', 
                       (ability_data['id'], ability_en_name, ability_fr_name))
 
-# Enlève le caractère '_' pour mettre des espaces a la place
-def format_ability_name(dbSymbol):
-    ability_name = ''.join(word.capitalize() for word in dbSymbol.split('_'))
-    # print('Ability name formatted : ' + ability_name)
+# Retire tous les chara spéciaux pour les remplacer par des espaces
+def format_ability_name(ability_name):
+    # Remplace les caractères indésirables par des espaces
+    ability_name = re.sub(r'[_\'-]', ' ', ability_name)
+    # Capitalise chaque mot
+    ability_name = ' '.join(word.capitalize() for word in ability_name.split())
     return ability_name
 
 # Fonction pour récupérer les noms FR et EN d'un talent à partir du dbSymbol
 def get_ability_name(dbSymbol):
     # print('Récupération des noms FR et EN du talent : ' + dbSymbol)
-    ability_text_file = '../pokemon-rlm/Data/Text/Dialogs/100004.csv'
+    ability_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100004.csv'
     
     # Initialisation des variables pour les noms
     ability_en_name = format_ability_name(dbSymbol)
@@ -67,7 +80,7 @@ def get_ability_name(dbSymbol):
     return ability_en_name, ability_fr_name
 
 # Utiliser glob pour lire tous les fichiers jSON
-abilities_file_path = '../pokemon-rlm/Data/Studio/abilities/*.json'
+abilities_file_path = config['psdk_game_folder'] + '/Data/Studio/abilities/*.json'
 for file_path in glob.glob(abilities_file_path):
     # print(f'\nLancement de l\'enregistrement du talent "{file_path}"')
     insert_ability(file_path)

@@ -4,8 +4,18 @@ import sqlite3
 import json
 import glob
 
+# Lecture du json de config
+def load_config(config_file):
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    return config
+
+config = load_config('./config.json')
+print(f'Dossier du projet PSDK : {config['psdk_game_folder']}')
+print(f'Dossier du projet PSDK : {config['bdd_folder']}')
+
 # Connexion à la base de données SQLite (ou création)
-conn = sqlite3.connect('./BDD/moves.db')
+conn = sqlite3.connect(config['bdd_folder'] + '/moves.db')
 cursor = conn.cursor()
 
 # Création de la table pour les attaques
@@ -136,7 +146,7 @@ def format_move_name(move_name):
 # Fonction pour récupérer les noms FR et EN d'une attaque à partir du dbSymbol
 def get_move_name(dbSymbol):
     # print('Récupération des noms FR et EN de l'attaque : ' + dbSymbol)
-    move_text_file = '../pokemon-rlm/Data/Text/Dialogs/100006.csv'
+    move_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100006.csv'
     
     # Initialisation des variables pour les noms
     move_en_name = format_move_name(dbSymbol)
@@ -167,7 +177,7 @@ def get_move_name(dbSymbol):
     return move_en_name, move_fr_name
 
 # Utiliser glob pour lire tous les fichiers jSON
-abilities_file_path = '../pokemon-rlm/Data/Studio/moves/*.json'
+abilities_file_path = config['psdk_game_folder'] + '/Data/Studio/moves/*.json'
 for file_path in glob.glob(abilities_file_path):
     # print(f'\nLancement de l\'enregistrement de l'attaque "{file_path}"')
     insert_move(file_path)

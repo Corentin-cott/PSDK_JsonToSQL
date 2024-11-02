@@ -1,4 +1,4 @@
 {
-    "psdk_game_folder" : "../psdk-project",
+    "psdk_game_folder" : "../pokemon-rlm",
     "bdd_folder" : "./BDD"
 }

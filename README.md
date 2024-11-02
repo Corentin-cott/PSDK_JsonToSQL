@@ -43,6 +43,7 @@ Les scripts sont écrits en Python et utilisent les modules suivants :
 - [JSON](https://docs.python.org/fr/3/library/json.html) : Pour lire les fichiers JSON
 - [Glob](https://docs.python.org/3/library/glob.html) : Pour traiter plusieurs fichier d'un dossier
 - [Re](https://docs.python.org/3/library/re.html) : Pour facilement formatter les charactère spéciaux
+- [Os](https://docs.python.org/3/library/os.html) : Pour suprimer le fichier de BDD lors de la création d'un nouveau
 
 ## Contributions
 

@@ -38,11 +38,11 @@ Grâce à ces scripts, il est facile et rapide de créer une base de données SQ
 ## Fonctionnement
 
 Les scripts sont écrits en Python et utilisent les modules suivants :
-- CSV : Pour lire les fichiers CSV
-- SQLite 3 : Pour créer et insérer les données dans un fichier .db
-- JSON : Pour lire les fichiers JSON
-- Glob : Pour traiter plusieurs fichier d'un dossier
-- Re : Pour facilement formatter les charactère spéciaux
+- [CSV](https://docs.python.org/fr/3/library/csv.html) : Pour lire les fichiers CSV
+- [SQLite 3](https://docs.python.org/3/library/sqlite3.html) : Pour créer et insérer les données dans un fichier .db
+- [JSON](https://docs.python.org/fr/3/library/json.html) : Pour lire les fichiers JSON
+- [Glob](https://docs.python.org/3/library/glob.html) : Pour traiter plusieurs fichier d'un dossier
+- [Re](https://docs.python.org/3/library/re.html) : Pour facilement formatter les charactère spéciaux
 
 ## Contributions
 

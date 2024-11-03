@@ -52,8 +52,7 @@ babyForm = 0
 # Table Evolutions
 evo_dbSymbol = ''
 evo_form = 0
-conditionType = ''
-conditionValue = 0
+condition = 0
 # Table Abilities
 abilityOne = ''
 abilityTwo = ''
@@ -221,19 +220,36 @@ cursor.execute('''
     CREATE TABLE Evolutions (
         id INTEGER PRIMARY KEY,
         pokemon_id INT,
-        dbSymbol VARCHAR(20) NOT NULL,
         form INT NOT NULL,
-        conditionType VARCHAR(20),
-        conditionValue INT,
+        evo_dbSymbol VARCHAR(20) NOT NULL,
+        evo_form INT NOT NULL,
+        condition TEXT,
         FOREIGN KEY (pokemon_id) REFERENCES Pokemon(id)
     );
 ''')
+
+# Fonction pour transformer les conditions d'évolution en texte
+def evo_conditions_to_text(conditions):
+    text = "Conditions d'évolution :\n"
+    for condition in conditions:
+        text += f"- {condition["type"]} : {condition['value']}\n"
+    return text
+
+def insert_pokemon_evolutions(pokemon_id, form, evo_dbSymbol, evo_form, condition):
+    cursor.execute('''
+        INSERT INTO Evolutions (
+            pokemon_id, form, evo_dbSymbol, evo_form, condition
+        ) VALUES (?, ?, ?, ?, ?)
+    ''', (
+        pokemon_id, form, evo_dbSymbol, evo_form, condition
+    ))
 
 # Création de la table pour les talents de Pokémon
 cursor.execute('''
     CREATE TABLE Abilities (
         id INTEGER PRIMARY KEY,
         pokemon_id INT,
+        form INT NOT NULL,
         abilityOne VARCHAR(30) NOT NULL,
         abilityTwo VARCHAR(30) NOT NULL,
         abilityHidden VARCHAR(30) NOT NULL,
@@ -246,6 +262,7 @@ cursor.execute('''
     CREATE TABLE BreedGroups (
         id INTEGER PRIMARY KEY,
         pokemon_id INT,
+        form INT NOT NULL,
         breedGroupOne INT,
         breedGroupTwo INT,
         FOREIGN KEY (pokemon_id) REFERENCES Pokemon(id)
@@ -289,6 +306,22 @@ for file_path in glob.glob(pokemon_folder_path):
                 form['babyDbSymbol'],
                 form['babyForm']
             )
+
+            for evolution in form['evolutions']:
+                # Check pour dbSymbol (S'il y en a pas, c'est que c'est une Méga Évolution)
+                db_symbol = evolution.get('dbSymbol', None)  # Défini None par défaut
+                if db_symbol is None:
+                    # print(f"Warning : Erreur ou méga évolution détecté : {evolution}")
+                    # time.sleep(5)
+                    continue  # Skip car dbSymbol n'est pas requis pour l'enregistrement
+                
+                insert_pokemon_evolutions(
+                    pokemon_data['id'],
+                    form['form'],
+                    db_symbol,
+                    evolution['form'],
+                    evo_conditions_to_text(evolution['conditions'])
+                )
 
 # Sauvegarde et fermeture de la connexion
 conn.commit()

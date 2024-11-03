@@ -198,7 +198,7 @@ def insert_pokemon(pokemon_dexId, nameEN, form, height, weight, type1, type2, ba
     nameFR, pokemon_desc_row = get_pokemon_nameFR(nameEN)
     # Récupération des description EN et FR
     descEN, descFR = get_pokemon_descs(pokemon_desc_row)
-    print(f'Insertion du Pokémon {nameEN} : Dex {pokemon_dexId}')
+    print(f'Insertion du Pokémon {nameEN} (Forme N°{form}) : Dex {pokemon_dexId}')
     # Préparation de la requête SQL pour insérer un Pokémon
     cursor.execute('''
         INSERT INTO Pokemon (
@@ -235,7 +235,8 @@ def evo_conditions_to_text(conditions):
         text += f"- {condition["type"]} : {condition['value']}\n"
     return text
 
-def insert_pokemon_evolutions(pokemon_id, form, evo_dbSymbol, evo_form, condition):
+# Fonction d'insertion d'une évolution de Pokémon
+def insert_pokemon_evolution(pokemon_id, form, evo_dbSymbol, evo_form, condition):
     cursor.execute('''
         INSERT INTO Evolutions (
             pokemon_id, form, evo_dbSymbol, evo_form, condition
@@ -257,6 +258,16 @@ cursor.execute('''
     );
 ''')
 
+# Fonction d'insertion d'un talent de Pokémon
+def insert_pokemon_ability(pokemon_id, form, abilityOne, abilityTwo, abilityHidden):
+    cursor.execute('''
+        INSERT INTO Abilities (
+            pokemon_id, form, abilityOne, abilityTwo, abilityHidden
+        ) VALUES (?, ?, ?, ?, ?)
+    ''', (
+        pokemon_id, form, abilityOne, abilityTwo, abilityHidden
+    ))
+
 # Création de la table pour les groupe d'oeuf de Pokémon
 cursor.execute('''
     CREATE TABLE BreedGroups (
@@ -268,6 +279,16 @@ cursor.execute('''
         FOREIGN KEY (pokemon_id) REFERENCES Pokemon(id)
     );
 ''')
+
+# Fonction d'insertion des groupes d'oeufs de Pokémon
+def insert_pokemon_breedGroup(pokemon_id, form, breedGroupOne, breedGroupTwo):
+    cursor.execute('''
+        INSERT INTO BreedGroups (
+            pokemon_id, form, breedGroupOne, breedGroupTwo
+        ) VALUES (?, ?, ?, ?)
+    ''', (
+        pokemon_id, form, breedGroupOne, breedGroupTwo
+    ))
 
 # Utiliser glob pour lire tous les fichiers jSON de Pokémon
 file_count = 0
@@ -315,13 +336,28 @@ for file_path in glob.glob(pokemon_folder_path):
                     # time.sleep(5)
                     continue  # Skip car dbSymbol n'est pas requis pour l'enregistrement
                 
-                insert_pokemon_evolutions(
+                insert_pokemon_evolution(
                     pokemon_data['id'],
                     form['form'],
                     db_symbol,
                     evolution['form'],
                     evo_conditions_to_text(evolution['conditions'])
                 )
+            
+            insert_pokemon_ability(
+                pokemon_data['id'], 
+                form['form'], 
+                form['abilities'][0], 
+                form['abilities'][1], 
+                form['abilities'][2]
+            )
+
+            insert_pokemon_breedGroup(
+                pokemon_data['id'], 
+                form['form'], 
+                form['breedGroups'][0],
+                form['breedGroups'][1] 
+            )
 
 # Sauvegarde et fermeture de la connexion
 conn.commit()

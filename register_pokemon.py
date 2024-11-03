@@ -5,6 +5,7 @@ import sqlite3
 import json
 import glob
 import time
+import unicodedata
 
 # Lecture du json de config
 def load_config(config_file):
@@ -71,12 +72,27 @@ if os.path.exists(db_path):
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
+# Retire tous les chara spéciaux pour les remplacer par des espaces
+def format_text(text):
+    # Supprime les accents
+    text = unicodedata.normalize('NFD', text)
+    text = ''.join(c for c in text if unicodedata.category(c) != 'Mn')  # Enlève les marques diacritiques (accents)
+    
+    # Remplace tous les caractères non alphanumériques par rien (supprime-les)
+    text = re.sub(r"[^a-zA-Z0-9]", "", text)
+    
+    # Met en minuscules
+    return text.lower()
+
 # Création de la table pour les Pokémon
 cursor.execute('''
     CREATE TABLE Pokemon (
         id INTEGER PRIMARY KEY,
         dexId INT NOT NULL,
         nameEN VARCHAR(20),
+        nameFR VARCHAR(20),
+        descEN TEXT,
+        descFR TEXT,
         form INT NOT NULL,
         height DECIMAL(3,1) NOT NULL,
         weight DECIMAL(4,1) NOT NULL,
@@ -105,18 +121,94 @@ cursor.execute('''
     );
 ''')
 
+# Fonction pour récupéré le nom FR d'un Pokémon à partir de son nom EN
+def get_pokemon_nameFR(nameEN):
+    # Initialisation des variables
+    pokemon_name_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100000.csv'
+    nameFR = ''
+    pokemon_desc_row = 0
+    
+    # Lecture du fichier CSV qui contient les noms de Pokémon
+    try:
+        with open(pokemon_name_text_file, mode='r', encoding='utf-8') as file:
+            csv_reader = csv.reader(file)
+            headers = next(csv_reader)  # Première ligne pour les en-têtes
+            
+            # Trouver les index pour 'en' et 'fr' dans les en-têtes, normalement 0 pour EN et 1 pour FR
+            en_index = headers.index('en')
+            fr_index = headers.index('fr')
+            # Il y a d'autre langues d'enregistré pour PSDK, mais ce programme les ignorera
+            
+            # Parcourir les lignes pour trouver la correspondance du nom anglais
+            rowNumber = 1
+            for row in csv_reader:
+                rowNumber = rowNumber + 1
+                # print(f'{rowNumber} | ROW = {row[en_index]} / RECH = {nameEN}')
+                if format_text(row[en_index]) == format_text(nameEN):
+                    nameFR = row[fr_index]
+                    pokemon_desc_row = rowNumber
+                    break  # Sortie de la boucle dès (que le nom est trouvé
+                
+    except FileNotFoundError:
+        print("Le fichier de dialogue n'a pas été trouvé.")
+    except Exception as e:
+        print(f'Erreur lors de la lecture du fichier : {e}')
+
+    return nameFR, pokemon_desc_row
+
+# Fonction pour récupéré les descriptions EN et FR d'un Pokémon à partir de la ligne de ses textes
+def get_pokemon_descs(pokemon_desc_row):
+    # Initialisation des variables
+    pokemon_desc_text_file = config['psdk_game_folder'] + '/Data/Text/Dialogs/100002.csv'
+    pokemon_en_desc = ''
+    pokemon_fr_desc = ''
+
+    # On passe à la récupération des descriptions
+    try:
+        with open(pokemon_desc_text_file, mode='r', encoding='utf-8') as file:
+            csv_reader = csv.reader(file)
+            headers = next(csv_reader)  # Première ligne pour les en-têtes
+            
+            # Trouver les index pour 'en' et 'fr' dans les en-têtes, normalement 0 pour EN et 1 pour FR
+            en_index = headers.index('en')
+            fr_index = headers.index('fr')
+
+            rowNumber = 1
+            for row in csv_reader:
+                rowNumber = rowNumber + 1
+                if rowNumber == pokemon_desc_row:
+                    pokemon_en_desc = row[en_index]
+                    pokemon_fr_desc = row[fr_index]
+                    break  # Sortie de la boucle dès que le nom est trouvé
+                
+    except FileNotFoundError:
+        print("Le fichier de dialogue n'a pas été trouvé.")
+    except Exception as e:
+        print(f'Erreur lors de la lecture du fichier : {e}')
+
+    if not pokemon_en_desc:
+        pokemon_en_desc = 'No description'
+    if not pokemon_fr_desc:
+        pokemon_fr_desc = 'Pas de description'
+
+    return pokemon_en_desc, pokemon_fr_desc
+
 # Fonction d'insertion d'un Pokémon
 def insert_pokemon(pokemon_dexId, nameEN, form, height, weight, type1, type2, baseHp, baseAtk, baseDfe, baseSpd, baseAts, baseDfs, evGivenHp, evGivenAtk, evGivenDfe, evGivenSpd, evGivenAts, evGivenDfs, experienceType, baseExperience, baseLoyalty, catchRate, femaleRate, hatchSteps, babyDbSymbol, babyForm):
+    # Récupération du nom FR
+    nameFR, pokemon_desc_row = get_pokemon_nameFR(nameEN)
+    # Récupération des description EN et FR
+    descEN, descFR = get_pokemon_descs(pokemon_desc_row)
     print(f'Insertion du Pokémon {nameEN} : Dex {pokemon_dexId}')
     # Préparation de la requête SQL pour insérer un Pokémon
     cursor.execute('''
         INSERT INTO Pokemon (
-            dexId, nameEN, form, height, weight, type1, type2, baseHp, baseAtk, baseDfe, baseSpd, baseAts, baseDfs,
+            dexId, nameEN, nameFR, descEN, descFR, form, height, weight, type1, type2, baseHp, baseAtk, baseDfe, baseSpd, baseAts, baseDfs,
             evGivenHp, evGivenAtk, evGivenDfe, evGivenSpd, evGivenAts, evGivenDfs, experienceType, baseExperience,
             baseLoyalty, catchRate, femaleRate, hatchSteps, babyDbSymbol, babyForm
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
-        pokemon_dexId, nameEN, form, height, weight, type1, type2, baseHp, baseAtk, baseDfe, baseSpd, baseAts, baseDfs,
+        pokemon_dexId, nameEN, nameFR, descEN, descFR, form, height, weight, type1, type2, baseHp, baseAtk, baseDfe, baseSpd, baseAts, baseDfs,
         evGivenHp, evGivenAtk, evGivenDfe, evGivenSpd, evGivenAts, evGivenDfs, experienceType, baseExperience,
         baseLoyalty, catchRate, femaleRate, hatchSteps, babyDbSymbol, babyForm
     ))
@@ -167,35 +259,36 @@ for file_path in glob.glob(pokemon_folder_path):
     with open(file_path, 'r') as file:
         pokemon_data = json.load(file)
         # Insertions dans la Table Pokemon
-        insert_pokemon(
-            pokemon_data['id'],
-            pokemon_data['dbSymbol'],
-            pokemon_data['forms'][0]['form'],
-            pokemon_data['forms'][0]['height'],
-            pokemon_data['forms'][0]['weight'],
-            pokemon_data['forms'][0]['type1'],
-            pokemon_data['forms'][0]['type2'],
-            pokemon_data['forms'][0]['baseHp'],
-            pokemon_data['forms'][0]['baseAtk'],
-            pokemon_data['forms'][0]['baseDfe'],
-            pokemon_data['forms'][0]['baseSpd'],
-            pokemon_data['forms'][0]['baseAts'],
-            pokemon_data['forms'][0]['baseDfs'],
-            pokemon_data['forms'][0]['evHp'],
-            pokemon_data['forms'][0]['evAtk'],
-            pokemon_data['forms'][0]['evDfe'],
-            pokemon_data['forms'][0]['evSpd'],
-            pokemon_data['forms'][0]['evAts'],
-            pokemon_data['forms'][0]['evDfs'],
-            pokemon_data['forms'][0]['experienceType'],
-            pokemon_data['forms'][0]['baseExperience'],
-            pokemon_data['forms'][0]['baseLoyalty'],
-            pokemon_data['forms'][0]['catchRate'],
-            pokemon_data['forms'][0]['femaleRate'],
-            pokemon_data['forms'][0]['hatchSteps'],
-            pokemon_data['forms'][0]['babyDbSymbol'],
-            pokemon_data['forms'][0]['babyForm']
-        )
+        for form in pokemon_data['forms']:
+            insert_pokemon(
+                pokemon_data['id'],
+                pokemon_data['dbSymbol'],
+                form['form'],
+                form['height'],
+                form['weight'],
+                form['type1'],
+                form['type2'],
+                form['baseHp'],
+                form['baseAtk'],
+                form['baseDfe'],
+                form['baseSpd'],
+                form['baseAts'],
+                form['baseDfs'],
+                form['evHp'],
+                form['evAtk'],
+                form['evDfe'],
+                form['evSpd'],
+                form['evAts'],
+                form['evDfs'],
+                form['experienceType'],
+                form['baseExperience'],
+                form['baseLoyalty'],
+                form['catchRate'],
+                form['femaleRate'],
+                form['hatchSteps'],
+                form['babyDbSymbol'],
+                form['babyForm']
+            )
 
 # Sauvegarde et fermeture de la connexion
 conn.commit()

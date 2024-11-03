@@ -42,7 +42,7 @@ Les scripts sont écrits en Python et utilisent les modules suivants :
 - [SQLite 3](https://docs.python.org/3/library/sqlite3.html) : Pour créer et insérer les données dans un fichier .db
 - [JSON](https://docs.python.org/fr/3/library/json.html) : Pour lire les fichiers JSON
 - [Glob](https://docs.python.org/3/library/glob.html) : Pour traiter plusieurs fichier d'un dossier
-- [Re](https://docs.python.org/3/library/re.html) : Pour facilement formatter les charactère spéciaux
+- [Re](https://docs.python.org/3/library/re.html) & [Unicodedata](https://docs.python.org/3/library/unicodedata) : Pour facilement formatter les charactère spéciaux
 - [Os](https://docs.python.org/3/library/os.html) : Pour suprimer le fichier de BDD lors de la création d'un nouveau
 
 ## Contributions

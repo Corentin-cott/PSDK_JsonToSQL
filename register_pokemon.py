@@ -290,6 +290,28 @@ def insert_pokemon_breedGroup(pokemon_id, form, breedGroupOne, breedGroupTwo):
         pokemon_id, form, breedGroupOne, breedGroupTwo
     ))
 
+# Création de la table pour les movesets de Pokémon
+cursor.execute('''
+    CREATE TABLE Movesets (
+        id INTEGER PRIMARY KEY,
+        pokemon_id INT NOT NULL,
+        form INT NOT NULL,
+        move VARCHAR(20) NOT NULL,
+        method VARCHAR(20) NOT NULL,
+        level INT,
+        FOREIGN KEY (pokemon_id) REFERENCES Pokemon(id)
+    );
+''')
+
+def insert_move_into_moveset(pokemon_id, form, move, method, level):
+    cursor.execute('''
+        INSERT INTO Movesets (
+            pokemon_id, form, move, method, level
+        ) VALUES (?, ?, ?, ?, ?)
+    ''', (
+        pokemon_id, form, move, method, level
+    ))
+
 # Utiliser glob pour lire tous les fichiers jSON de Pokémon
 file_count = 0
 for file_path in glob.glob(pokemon_folder_path):
@@ -342,6 +364,18 @@ for file_path in glob.glob(pokemon_folder_path):
                     db_symbol,
                     evolution['form'],
                     evo_conditions_to_text(evolution['conditions'])
+                )
+
+            for move in form['moveSet']:
+                # Défini 0 si le move ne s'apprend pas par niveau
+                level = move.get('level', 0)  # Défini 0 par défaut
+
+                insert_move_into_moveset(
+                    pokemon_data['id'],
+                    form['form'],
+                    move['move'],
+                    move['klass'],
+                    level
                 )
             
             insert_pokemon_ability(

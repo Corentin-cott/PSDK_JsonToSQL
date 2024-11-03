@@ -4,6 +4,7 @@ import re
 import sqlite3
 import json
 import glob
+import time
 
 # Lecture du json de config
 def load_config(config_file):
@@ -16,10 +17,12 @@ print(f'Dossier du projet PSDK : {config['psdk_game_folder']}')
 print(f'Dossier du projet PSDK : {config['bdd_folder']}')
 
 # Initialisation des variables
+pokemon_folder_path = config['psdk_game_folder'] + '/Data/Studio/pokemon/*.json'
 db_path = config['bdd_folder'] + '/pokemon.db'
 # Toutes tables
-pokemon_id = 0
+pokemon_dexId = 0
 # Table Pokemon
+nameEN = ''
 form = 0
 height = 0
 weight = 0
@@ -61,7 +64,8 @@ breedGroupTwo = 0
 # Suppression de la base de données si elle existe
 if os.path.exists(db_path):
     os.remove(db_path)
-    print("Base de données supprimée.")
+    print("\nUn ancienne base de donnée à été trouver, elle va être supprimée.\n")
+    time.sleep(2.5)
 
 # Connexion à la base de données SQLite (ou création)
 conn = sqlite3.connect(db_path)
@@ -71,6 +75,8 @@ cursor = conn.cursor()
 cursor.execute('''
     CREATE TABLE Pokemon (
         id INTEGER PRIMARY KEY,
+        dexId INT NOT NULL,
+        nameEN VARCHAR(20),
         form INT NOT NULL,
         height DECIMAL(3,1) NOT NULL,
         weight DECIMAL(4,1) NOT NULL,
@@ -98,6 +104,25 @@ cursor.execute('''
         babyForm INT
     );
 ''')
+
+# Fonction d'insertion d'un Pokémon
+def insert_pokemon(pokemon_dexId, nameEN, form, height, weight, type1, type2, baseHp, baseAtk, baseDfe, baseSpd, baseAts, baseDfs, evGivenHp, evGivenAtk, evGivenDfe, evGivenSpd, evGivenAts, evGivenDfs, experienceType, baseExperience, baseLoyalty, catchRate, femaleRate, hatchSteps, babyDbSymbol, babyForm):
+    print(f'Insertion du Pokémon {nameEN} : Dex {pokemon_dexId}')
+    # Préparation de la requête SQL pour insérer un Pokémon
+    cursor.execute('''
+        INSERT INTO Pokemon (
+            dexId, nameEN, form, height, weight, type1, type2, baseHp, baseAtk, baseDfe, baseSpd, baseAts, baseDfs,
+            evGivenHp, evGivenAtk, evGivenDfe, evGivenSpd, evGivenAts, evGivenDfs, experienceType, baseExperience,
+            baseLoyalty, catchRate, femaleRate, hatchSteps, babyDbSymbol, babyForm
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        pokemon_dexId, nameEN, form, height, weight, type1, type2, baseHp, baseAtk, baseDfe, baseSpd, baseAts, baseDfs,
+        evGivenHp, evGivenAtk, evGivenDfe, evGivenSpd, evGivenAts, evGivenDfs, experienceType, baseExperience,
+        baseLoyalty, catchRate, femaleRate, hatchSteps, babyDbSymbol, babyForm
+    ))
+
+    # Sauvegarde des modifications
+    conn.commit()
 
 # Création de la table pour les évolutions de Pokémon
 cursor.execute('''
@@ -134,6 +159,43 @@ cursor.execute('''
         FOREIGN KEY (pokemon_id) REFERENCES Pokemon(id)
     );
 ''')
+
+# Utiliser glob pour lire tous les fichiers jSON de Pokémon
+file_count = 0
+for file_path in glob.glob(pokemon_folder_path):
+    file_count = file_count + 1
+    with open(file_path, 'r') as file:
+        pokemon_data = json.load(file)
+        # Insertions dans la Table Pokemon
+        insert_pokemon(
+            pokemon_data['id'],
+            pokemon_data['dbSymbol'],
+            pokemon_data['forms'][0]['form'],
+            pokemon_data['forms'][0]['height'],
+            pokemon_data['forms'][0]['weight'],
+            pokemon_data['forms'][0]['type1'],
+            pokemon_data['forms'][0]['type2'],
+            pokemon_data['forms'][0]['baseHp'],
+            pokemon_data['forms'][0]['baseAtk'],
+            pokemon_data['forms'][0]['baseDfe'],
+            pokemon_data['forms'][0]['baseSpd'],
+            pokemon_data['forms'][0]['baseAts'],
+            pokemon_data['forms'][0]['baseDfs'],
+            pokemon_data['forms'][0]['evHp'],
+            pokemon_data['forms'][0]['evAtk'],
+            pokemon_data['forms'][0]['evDfe'],
+            pokemon_data['forms'][0]['evSpd'],
+            pokemon_data['forms'][0]['evAts'],
+            pokemon_data['forms'][0]['evDfs'],
+            pokemon_data['forms'][0]['experienceType'],
+            pokemon_data['forms'][0]['baseExperience'],
+            pokemon_data['forms'][0]['baseLoyalty'],
+            pokemon_data['forms'][0]['catchRate'],
+            pokemon_data['forms'][0]['femaleRate'],
+            pokemon_data['forms'][0]['hatchSteps'],
+            pokemon_data['forms'][0]['babyDbSymbol'],
+            pokemon_data['forms'][0]['babyForm']
+        )
 
 # Sauvegarde et fermeture de la connexion
 conn.commit()

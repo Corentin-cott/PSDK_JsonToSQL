@@ -11,6 +11,9 @@
 
 **PSDK JsonToSQL** est simplement un ensemble de scripts écrits en Python qui ont pour objectif de convertir les données JSON (et CSV) de PSDK en tables SQL.
 
+> [!TIP]
+> Les bases crées par PSDK_JsonToSQL peuvent être, et même sont faites pour être utilisées avec [DexAPI](https://github.com/Corentin-cott/DexAPI) !
+
 ### > En quoi c'est utile ?
 
 Bien que très spécifique, c'est est utile pour afficher les données sur un site Web ou sur une autre interface applicative. Les données de PSDK, modifiables par Studio, sont enregistrées dans plusieurs fichiers différents à des emplacements variés. Par exemple, il existe un fichier JSON pour chaque talent, mais les noms français de ces talents sont tous enregistrés dans un seul fichier CSV à un endroit différent.

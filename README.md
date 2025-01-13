@@ -5,6 +5,7 @@
 - [Introduction](#introduction)
 - [PSDK](#psdk)
 - [Fonctionnement](#fonctionnement)
+- [Installation](#installation)
 - [Contributions](#contributions)
 
 ## Introduction
@@ -47,6 +48,10 @@ Les scripts sont écrits en Python et utilisent les modules suivants :
 - [Glob](https://docs.python.org/3/library/glob.html) : Pour traiter plusieurs fichier d'un dossier
 - [Re](https://docs.python.org/3/library/re.html) & [Unicodedata](https://docs.python.org/3/library/unicodedata) : Pour facilement formatter les charactère spéciaux
 - [Os](https://docs.python.org/3/library/os.html) : Pour suprimer le fichier de BDD lors de la création d'un nouveau
+
+## Fonctionnement
+
+Rien de compliqué, il vous suffit de cloner le dépot, ou même de simplement télécharger le code source des scripts.
 
 ## Contributions
 
